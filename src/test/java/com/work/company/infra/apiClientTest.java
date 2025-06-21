@@ -1,102 +1,98 @@
 package com.work.company.infra;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.work.aop.LogAspect;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import com.work.company.infra.api.ApiClient;
+import com.work.exception.CustomException;
+import com.work.exception.ErrorCode;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.InputStream;
-import java.net.URI;
-
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Import(LogAspect.class)
-public class apiTest {
+@ExtendWith(MockitoExtension.class)
+public class apiClientTest {
 
-    private static final String SERVICE_KEY1 =
-            "rwe7KLx3it1dFXPVmKAVQpY5j9SK0bNTf6s0mB2q41WoAUJRUe%2BmWS0UzPh4kDZhnoFg3k52YVApFOFbuS80iQ%3D%3D";
+    @Mock
+    RestTemplate restTemplate;
 
-    private static final String SERVICE_KEY2 =
-            "devU01TX0FVVEgyMDI1MDMyNTE1MTgxMTExNTU3NzE=";
+    @Spy
+    ObjectMapper mapper = new ObjectMapper();
 
-    private final HttpClient http = HttpClient.newHttpClient();
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper mapper = new ObjectMapper();
+    @InjectMocks
+    ApiClient apiClient;
 
-    @Test
-    void corApiTest() throws Exception {
-        // given
-        URI uri = UriComponentsBuilder
-                .fromUriString("https://apis.data.go.kr/1130000/MllBsDtl_2Service/getMllBsInfoDetail_2")
-                .queryParam("serviceKey", SERVICE_KEY1)
-                .queryParam("pageNo", 1)
-                .queryParam("numOfRows", 1)
-                .queryParam("resultType", "json")
-                .queryParam("brno", "8199501715")
-                .build(true)
-                .toUri();
-
-        HttpRequest req = HttpRequest.newBuilder(uri)
-                .header("Accept", "application/json")
-                .GET()
-                .build();
-
-        // when
-        HttpResponse<InputStream> res =
-                http.send(req, HttpResponse.BodyHandlers.ofInputStream());
-
-        // then
-        assertEquals(200, res.statusCode());
-
-        try (InputStream is = res.body()) {
-            String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-
-            assertFalse(body.isBlank());
-            assertTrue(body.contains("\"resultCode\""));
-            System.out.println(body);
-        }
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(apiClient, "corUrl", "http://dummy");
+        ReflectionTestUtils.setField(apiClient, "corKey", "dummy");
+        ReflectionTestUtils.setField(apiClient, "adrUrl", "http://dummy");
+        ReflectionTestUtils.setField(apiClient, "adrKey", "dummy");
     }
 
     @Test
-    void adrApiTest() throws Exception {
-        // given
-        String encodedKey = URLEncoder.encode(SERVICE_KEY2, StandardCharsets.UTF_8);
-        URI uri = UriComponentsBuilder
-                .fromUriString("https://business.juso.go.kr/addrlink/addrLinkApi.do")
-                .queryParam("confmKey", encodedKey)
-                .queryParam("currentPage", 1)
-                .queryParam("countPerPage", 1)
-                .queryParam("resultType", "json")
-                .queryParam("keyword", URLEncoder.encode("서울특별시 성북구 아리랑로19길", StandardCharsets.UTF_8))
-                .build(true)
-                .toUri();
+    @DisplayName("NON_JSON_RESPONSE JSON 형식 오류")
+    void nonJsonParser() {
+        //given
+        String html = "<html></html>";
 
-        // when
-//        HttpResponse<InputStream> res =
-//                http.send(req, HttpResponse.BodyHandlers.ofInputStream());
-        ResponseEntity<String> res = restTemplate.getForEntity(uri, String.class);
-        // then
-        System.out.println(res.getBody());
-//        assertEquals(200, res.getBody());
+        //when
+        CustomException ex = assertThrows(CustomException.class,
+                () -> apiClient.safeParse(html));
 
-//        try (InputStream is = res.get)) {
-//            String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-//
-//            assertFalse(body.isBlank());
-////            assertTrue(body.contains("\"resultCode\""));
-//            System.out.println(body);
-//        }
+        //then
+        assertEquals(ErrorCode.NON_JSON_RESPONSE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("JSON_PARSE_ERROR 예외")
+    void jsonParseError() {
+        //given
+        String broken = "{test}";
+
+        //when
+        CustomException ex = assertThrows(
+                CustomException.class,
+                () -> ReflectionTestUtils.invokeMethod(apiClient, "safeParse", broken)
+        );
+
+        //then
+        assertEquals(ErrorCode.JSON_PARSE_ERROR, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("정상 JSON RETURN")
+    void safeParseTest () {
+        //given
+        String ok = "{\"foo\":\"bar\"}";
+
+        //when
+        JsonNode node = assertDoesNotThrow(
+                () -> ReflectionTestUtils.invokeMethod(apiClient, "safeParse", ok)
+        );
+
+        //then
+        assertEquals("bar", node.get("foo").asText());
+    }
+
+    @Test
+    @DisplayName("requestCorApi정상")
+    void requestCorApiTest() {
+        String json = "{ \"items\":[{\"crno\":\"123\"}] }";
+        when(restTemplate.getForEntity(any(), eq(String.class)))
+                .thenReturn(ResponseEntity.ok(json));
+
+        JsonNode node = apiClient.requestCorApi("1101110999");
+
+        assertEquals("123", node.path("items").get(0).path("crno").asText());
     }
 
 

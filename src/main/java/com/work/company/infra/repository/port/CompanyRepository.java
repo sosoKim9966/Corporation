@@ -1,7 +1,11 @@
-package com.work.corporation.company.infra.repository.port;
+package com.work.company.infra.repository.port;
 
-import com.work.corporation.company.domain.CompanyEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.work.company.domain.CompanyEntity;
 
-public interface CompanyRepository extends JpaRepository<CompanyEntity, Long>, CompanyRepositoryCustom {
+import java.util.List;
+
+public interface CompanyRepository {
+    void saveAll(List<CompanyEntity> companies);
+
+    void testCode();
 }

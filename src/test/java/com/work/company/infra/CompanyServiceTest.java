@@ -1,21 +1,46 @@
 package com.work.company.infra;
 
-import com.work.aop.LogAspect;
+import com.work.company.application.CompanyService;
+import com.work.company.domain.CompanyEntity;
+import com.work.company.dto.CsvCorResponseDto;
 import com.work.company.infra.repository.port.CompanyRepository;
-import com.work.company.presentation.CompanyController;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-//
-@EnableAspectJAutoProxy
-@Import(LogAspect.class)
+import java.util.concurrent.CompletableFuture;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
-@WebMvcTest(CompanyController.class)
-public class RepositoryTest {
+public class CompanyServiceTest {
+
+    @MockitoBean
+    CompanyRepository repository;
 
     @Autowired
-    CompanyRepository repository;
+    CompanyService service;
+
+    @Test
+    public void apiRequestTest() throws Exception {
+        // given
+        CsvCorResponseDto dto = CsvCorResponseDto.builder()
+                .bzmnNm("(주)베토벤보청기")
+                .corpYnNm("법인")
+                .prmmiMnno("2015-서울은평-0538")
+                .brno("1118124728")
+                .build();
+
+        // when
+        CompletableFuture<CompanyEntity> test = service.apiRequest(dto);
+        System.out.println(test);
+
+        // then
+        assertThat(test)
+                .as("null 아니고")
+                .isNotNull();
+
+        System.out.println("test : " + test.toString());
+    }
 }

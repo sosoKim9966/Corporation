@@ -1,8 +1,8 @@
-package com.work.corporation.company.aop;
+package com.work.company.aop;
 
-import com.work.corporation.aop.LogAspect;
-import com.work.corporation.company.infra.repository.port.CompanyRepository;
-import com.work.corporation.company.application.CompanyService;
+import com.work.aop.LogAspect;
+import com.work.company.infra.repository.port.CompanyRepository;
+import com.work.company.application.CompanyService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

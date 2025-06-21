@@ -1,22 +1,26 @@
 package com.work.company.infra.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.work.exception.CustomException;
 import com.work.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Map;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
+@Component
 public class ApiClient {
 
     @Value("${corporation.cor.api.url}")
@@ -28,51 +32,63 @@ public class ApiClient {
     @Value("${corporation.adr.api.key}")
     private String adrKey;
 
-    public Object request(String type, JSONObject form) throws Exception, CustomException {
-        RestTemplate rt = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(form.toString(), headers);
+    @Qualifier("pooledRestTemplate")
+    private final RestTemplate restTemplate;
+    private final ObjectMapper mapper;
 
-        String url = type.equals("cor") ? corUrl : adrUrl;
+    public JsonNode requestCorApi(String brno) {
+        if (brno == null || brno.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_ARGUMENT, "brno 비었음");
+        }
 
-        log.info(" API 호출 [url: " + url + "]" + form.toString());
+        URI uri = UriComponentsBuilder.fromHttpUrl(corUrl)
+                .queryParam("serviceKey", corKey)
+                .queryParam("pageNo", 1)
+                .queryParam("numOfRows",1)
+                .queryParam("resultType","json")
+                .queryParam("brno", brno)
+                .build(true)
+                .toUri();
 
-        ResponseEntity<String> response = rt.exchange(url, HttpMethod.GET, entity, String.class);
+        return getAndParse(uri);
+    }
 
-        Map<String, Object> body = jsonToDataMap(response.getBody());
+    public JsonNode requestAdrApi(String lctnRnAddr) {
+        String encodedKey = URLEncoder.encode(adrKey, StandardCharsets.UTF_8);
 
-        String resultStatus = getToString(body, "KEY_RESULT_STATUS");
+        URI uri = UriComponentsBuilder.fromHttpUrl(adrUrl)
+                .queryParam("confmKey", encodedKey)
+                .queryParam("currentPage", 1)
+                .queryParam("countPerPage",1)
+                .queryParam("resultType","json")
+                .queryParam("keyword", URLEncoder.encode(lctnRnAddr), StandardCharsets.UTF_8)  // 자동 인코딩
+                .build(true)
+                .toUri();
 
-        log.info(" API 호출 결과 [result status: " + resultStatus + "]");
+        return getAndParse(uri);
+    }
 
-        if(resultStatus.equals("ok")) {
-            return body.get("resultValue");
-        } else {
-            String errorCode = getToString(body, "errorCode");
-            String errorMessage = getToString(body, "resultMessage");
+    private JsonNode getAndParse(URI uri) {
+        ResponseEntity<String> res = restTemplate.getForEntity(uri, String.class);
 
-            log.error("API Error : [" + errorCode + "] " + errorMessage);
+        assert2xx(res);
+        return safeParse(res.getBody());
+    }
 
-            throw new CustomException(ErrorCode.valueOf(errorCode), errorMessage);
+    private static void assert2xx(ResponseEntity<?> res) {
+        if (!res.getStatusCode().is2xxSuccessful()) {
+            throw new CustomException(ErrorCode.HTTP_STATUS_ERROR, res.getStatusCode().toString());
         }
     }
 
-    static Map<String, Object> jsonToDataMap(String json) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(json, new TypeReference<Map<String, Object>>(){});
-    }
-
-    public String getToString(Map<String, Object> params, String key) {
-        return getToString(params, key, null);
-    }
-
-    // get string
-    public String getToString(Map<String, Object> params, String key, String defaultVal) {
-        if (!params.isEmpty() && params.get(key) != null) {
-            return params.get(key).toString();
+    public JsonNode safeParse(String body) {
+        try {
+            if (body == null || body.isBlank() || body.startsWith("<")) {
+                throw new CustomException(ErrorCode.NON_JSON_RESPONSE, "JSON 형식 오류");
+            }
+            return mapper.readTree(body);
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.JSON_PARSE_ERROR , e.getMessage());
         }
-        return defaultVal;
     }
-
 }

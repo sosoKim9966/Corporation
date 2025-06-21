@@ -1,22 +1,29 @@
-package com.work.corporation.company.infra.repository.impl;
+package com.work.company.infra.repository.impl;
 
-import com.work.corporation.company.infra.repository.port.CompanyRepositoryCustom;
+import com.work.company.domain.CompanyEntity;
+import com.work.company.infra.repository.port.CompanyRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Slf4j
 @Repository
-public class CompanyRepositoryImpl implements CompanyRepositoryCustom {
+@RequiredArgsConstructor
+public class CompanyRepositoryImpl implements CompanyRepository {
+
+    private final JpaCompanyRepository repository;
 
     @Override
-    public String testRepository(String test) {
+    public void saveAll(List<CompanyEntity> companies) {
         log.info("[orderRepository] 실행");
-
-        //저장 로직
-        if (test.equals("ex")) {
-            throw new IllegalStateException("예외 발생!");
-        }
-
-        return "ok";
+        repository.saveAll(companies);
     }
+
+    @Override
+    public void testCode() {
+        log.info("[orderRepository] 실행");
+    }
+
 }

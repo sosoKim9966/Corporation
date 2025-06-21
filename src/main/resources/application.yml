@@ -1,1 +1,38 @@
-spring.application.name=Corporation
+spring:
+  application:
+    name: Corporation
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8080
+
+corporation:
+  csv:
+    base-url: https://www.ftc.go.kr/www/downloadBizComm.do
+    referer: https://www.ftc.go.kr/www/selectBizCommOpenList.do?key=255
+  cor:
+    api:
+      url: https://apis.data.go.kr/1130000/MllBsDtl_2Service/getMllBsInfoDetail_2
+      key: rwe7KLx3it1dFXPVmKAVQpY5j9SK0bNTf6s0mB2q41WoAUJRUe%2BmWS0UzPh4kDZhnoFg3k52YVApFOFbuS80iQ%3D%3D
+
+  adr:
+    api:
+      url: https://business.juso.go.kr/addrlink/addrLinkApi.do
+      key: devU01TX0FVVEgyMDI1MDMyNTE1MTgxMTExNTU3NzE=
+
+logging:
+  level:
+    root: info
+    com.work.aop: debug

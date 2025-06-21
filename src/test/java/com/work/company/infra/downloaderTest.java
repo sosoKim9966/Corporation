@@ -1,27 +1,34 @@
-package com.work.corporation.company.infra;
-import lombok.extern.slf4j.Slf4j;
+package com.work.company.infra;
+
+import com.work.company.infra.csv.CsvDownloader;
+import com.work.util.CsvCorParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import com.work.corporation.company.infra.csv.CsvDownloader;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-@Slf4j
 @SpringBootTest
 public class downloaderTest {
 
     @Autowired
     private CsvDownloader downloader;
 
+    @Autowired
+    private CsvCorParser parser;
+
     @Test
     void downloadTest() {
         // given
         String city = "서울특별시";
-        String district = "성북구";
+        String district = "강남구";
 
         // when
         Path file = downloader.download(city, district);
@@ -36,5 +43,31 @@ public class downloaderTest {
                 .isTrue();
 
         assertThat(file.toString()).endsWith(".csv");
+    }
+
+    @Test
+    void findFileEncoding() throws IOException {
+        String encoding = parser.findFileEncoding("/Users/sojinkim/Downloads/통신판매사업자_서울특별시_성북구.csv");
+        System.out.println(encoding);
+        assertNotEquals("UTF-8", encoding);
+    }
+
+    @Test
+    void readLineTest() throws IOException {
+        parser.readLines(downloader.download("서울특별시", "강남구"));
+    }
+
+    @Test
+    void readWholeFile_ms949() throws Exception {
+        Path csv = downloader.download("서울특별시", "성북구");
+
+        long lineCount;
+        try (Stream<String> lines =
+                     Files.lines(csv, Charset.forName("MS949"))) {
+            lineCount = lines.count();
+        }
+
+        assertThat(lineCount).isGreaterThan(0);
+        System.out.printf("✅ MS949로 %d줄 읽힘%n", lineCount);
     }
 }

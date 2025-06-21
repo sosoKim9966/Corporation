@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ProblemDetail> GrahandleCustom(CustomException ex) {
+    public ResponseEntity<ProblemDetail> handleCustom(CustomException ex) {
         ProblemDetail pd = ProblemDetail
                 .forStatusAndDetail(ex.getStatus(), ex.getMessage());
-        pd.setTitle(ex.getCode());           // 추가 필드
+        pd.setTitle(ex.getMessage());
         return ResponseEntity.of(pd).build();
     }
 }

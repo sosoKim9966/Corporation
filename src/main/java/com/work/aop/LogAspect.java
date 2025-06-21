@@ -1,53 +1,52 @@
-package com.work.corporation.aop;
+package com.work.aop;
 
+import com.work.exception.CustomException;
+import com.work.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
-@Slf4j
 @Aspect
+@Order(Ordered.LOWEST_PRECEDENCE)
+@Slf4j
+@Component
 public class LogAspect {
 
-    @Around("com.work.corporation.aop.Pointcuts.corporationAndService()")
+    @Around("serviceLayer()")
     public Object doTransaction(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.nanoTime();
+        String sig = joinPoint.getSignature().toShortString();
 
         try {
-            //@Before
-            log.info("[트랜잭션 시작] {}", joinPoint.getSignature());
+            log.info("[TRANSACTION START] {}", sig);
             Object result = joinPoint.proceed();
-            //@AfterReturning
-            log.info("[트랜잭션 커밋] {}", joinPoint.getSignature());
+            log.info("[TRANSACTION COMMIT] sig={}, (elapsed={}ms)", sig, elapsedMs(start));
+
             return result;
+        } catch (CustomException customException) {
+            log.warn("[TRANSACTION PROPAGATE] sig={}, code={}", sig, customException.getErrorCode());
+
+            throw customException;
         } catch (Exception e) {
-            //@AfterThrowing
-            log.info("[트랜잭션 롤백] {}", joinPoint.getSignature());
-            throw e;
+            log.error("[TRANSACTION ROLLBACK] sig={}, message={}", sig, e.getMessage());
+
+            throw new CustomException(ErrorCode.TRANSACTION_ROLLBACK, e.getMessage(), e);
         } finally {
-            //@After
-            log.info("[리소스 릴리즈] {}", joinPoint.getSignature());
+            log.info("[TRANSACTION FINALLY] sig={}", sig);
         }
     }
 
-    @Before("com.work.corporation.aop.Pointcuts.corporationAndService()")
-    public void doBefore(JoinPoint joinPoint) {
-        log.info("[before] {}", joinPoint.getSignature());
+    private static long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 
-    @AfterReturning(value = "com.work.corporation.aop.Pointcuts.corporationAndService()", returning = "result")
-    public void doReturn(JoinPoint joinPoint, Object result) {
-        log.info("[return] {} return={}", joinPoint.getSignature(), result);
-    }
-
-    @AfterThrowing(value = "com.work.corporation.aop.Pointcuts.corporationAndService()", throwing = "ex")
-    public void doThrowing(JoinPoint joinPoint, Exception ex) {
-        log.info("[ex] {} message={}", ex);
-    }
-
-    @After(value = "com.work.corporation.aop.Pointcuts.corporationAndService()")
-    public void doAfter(JoinPoint joinPoint) {
-        log.info("[after] {}", joinPoint.getSignature());
-    }
-
+    /** 서비스 계층만 (…service 패키지 하위의 @Service 클래스) */
+    @Pointcut("execution(public * com.work..*Service.*(..))")
+    public void serviceLayer() {}
 
 }
