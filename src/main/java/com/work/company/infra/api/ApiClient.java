@@ -2,8 +2,8 @@ package com.work.company.infra.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.work.exception.CustomException;
-import com.work.exception.ErrorCode;
+import com.work.company.common.exception.CustomException;
+import com.work.company.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,7 +36,7 @@ public class ApiClient {
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper;
 
-    public JsonNode requestCorApi(String brno) {
+    public JsonNode callCorApi(String brno) {
         if (brno == null || brno.isBlank()) {
             throw new CustomException(ErrorCode.INVALID_ARGUMENT, "brno 비었음");
         }
@@ -53,7 +53,7 @@ public class ApiClient {
         return getAndParse(uri);
     }
 
-    public JsonNode requestAdrApi(String lctnRnAddr) {
+    public JsonNode callAdrApi(String lctnRnAddr) {
         String encodedKey = URLEncoder.encode(adrKey, StandardCharsets.UTF_8);
 
         URI uri = UriComponentsBuilder.fromHttpUrl(adrUrl)

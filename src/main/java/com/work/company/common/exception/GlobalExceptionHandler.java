@@ -1,4 +1,4 @@
-package com.work.exception;
+package com.work.company.common.exception;
 
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;

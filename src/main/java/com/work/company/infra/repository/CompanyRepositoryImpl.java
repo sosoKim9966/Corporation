@@ -1,7 +1,7 @@
-package com.work.company.infra.repository.impl;
+package com.work.company.infra.repository;
 
-import com.work.company.domain.CompanyEntity;
-import com.work.company.infra.repository.port.CompanyRepository;
+import com.work.company.domain.model.CompanyEntity;
+import com.work.company.domain.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -19,11 +19,6 @@ public class CompanyRepositoryImpl implements CompanyRepository {
     public void saveAll(List<CompanyEntity> companies) {
         log.info("[orderRepository] 실행");
         repository.saveAll(companies);
-    }
-
-    @Override
-    public void testCode() {
-        log.info("[orderRepository] 실행");
     }
 
 }

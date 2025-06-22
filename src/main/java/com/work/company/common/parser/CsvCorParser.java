@@ -1,29 +1,28 @@
-package com.work.util;
+package com.work.company.common.parser;
 
-import com.work.company.dto.CsvCorResponseDto;
+import com.work.company.domain.dto.CsvCorResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.mozilla.universalchardet.UniversalDetector;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Component
 public class CsvCorParser {
 
     public List<CsvCorResponseDto> getCorList(Path filePath) throws IOException {
-        try (Stream<String> lines = Files.lines(filePath, Charset.forName("MS949")).skip(1)) {
-            return lines
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(filePath.toFile()), Charset.forName("EUC-KR")))) {
+
+            return reader.lines()
+                    .skip(1)
                     .map(l -> l.split(",", 6))
                     .filter(arr -> arr.length >= 5)
                     .filter(arr -> "법인".equals(arr[4]))

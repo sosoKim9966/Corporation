@@ -1,7 +1,7 @@
-package com.work.aop;
+package com.work.company.common.log;
 
-import com.work.exception.CustomException;
-import com.work.exception.ErrorCode;
+import com.work.company.common.exception.CustomException;
+import com.work.company.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

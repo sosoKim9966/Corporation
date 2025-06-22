@@ -1,7 +1,7 @@
 package com.work.company.infra.csv;
 
-import com.work.exception.CustomException;
-import com.work.exception.ErrorCode;
+import com.work.company.common.exception.CustomException;
+import com.work.company.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

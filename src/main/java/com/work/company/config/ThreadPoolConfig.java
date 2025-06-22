@@ -1,4 +1,4 @@
-package com.work.config;
+package com.work.company.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +16,9 @@ public class ThreadPoolConfig {
     public Executor corporationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
-        executor.setCorePoolSize(16);
-        executor.setMaxPoolSize(32);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(200);
         executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("corporation-async");
         executor.setAwaitTerminationSeconds(60);

@@ -1,4 +1,4 @@
-package com.work.config;
+package com.work.company.config;
 
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;

@@ -3,8 +3,8 @@ package com.work.company.infra;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.work.company.infra.api.ApiClient;
-import com.work.exception.CustomException;
-import com.work.exception.ErrorCode;
+import com.work.company.common.exception.CustomException;
+import com.work.company.common.exception.ErrorCode;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,8 +39,7 @@ public class apiClientTest {
     }
 
     @Test
-    @DisplayName("NON_JSON_RESPONSE JSON 형식 오류")
-    void nonJsonParser() {
+    void jsonParse_fail_test1() {
         //given
         String html = "<html></html>";
 
@@ -53,8 +52,7 @@ public class apiClientTest {
     }
 
     @Test
-    @DisplayName("JSON_PARSE_ERROR 예외")
-    void jsonParseError() {
+    void jsonParse_fail_test2() {
         //given
         String broken = "{test}";
 
@@ -69,8 +67,7 @@ public class apiClientTest {
     }
 
     @Test
-    @DisplayName("정상 JSON RETURN")
-    void safeParseTest () {
+    void safeParse_test () {
         //given
         String ok = "{\"foo\":\"bar\"}";
 
@@ -84,13 +81,12 @@ public class apiClientTest {
     }
 
     @Test
-    @DisplayName("requestCorApi정상")
-    void requestCorApiTest() {
+    void call_api_test() {
         String json = "{ \"items\":[{\"crno\":\"123\"}] }";
         when(restTemplate.getForEntity(any(), eq(String.class)))
                 .thenReturn(ResponseEntity.ok(json));
 
-        JsonNode node = apiClient.requestCorApi("1101110999");
+        JsonNode node = apiClient.callCorApi("1101110999");
 
         assertEquals("123", node.path("items").get(0).path("crno").asText());
     }

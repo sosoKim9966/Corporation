@@ -1,7 +1,7 @@
 package com.work.company.infra;
 
 import com.work.company.infra.csv.CsvDownloader;
-import com.work.util.CsvCorParser;
+import com.work.company.common.parser.CsvCorParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,7 +25,7 @@ public class downloaderTest {
     private CsvCorParser parser;
 
     @Test
-    void downloadTest() {
+    void download_test() {
         // given
         String city = "서울특별시";
         String district = "강남구";
@@ -46,14 +46,14 @@ public class downloaderTest {
     }
 
     @Test
-    void findFileEncoding() throws IOException {
+    void find_encoding_test() throws IOException {
         String encoding = parser.findFileEncoding("/Users/sojinkim/Downloads/통신판매사업자_서울특별시_성북구.csv");
         System.out.println(encoding);
         assertNotEquals("UTF-8", encoding);
     }
 
     @Test
-    void readLineTest() throws IOException {
+    void readLine_test() throws IOException {
         parser.readLines(downloader.download("서울특별시", "강남구"));
     }
 

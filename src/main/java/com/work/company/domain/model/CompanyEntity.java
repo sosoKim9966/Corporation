@@ -1,11 +1,10 @@
-package com.work.company.domain;
+package com.work.company.domain.model;
 
-import com.work.company.dto.CsvCorResponseDto;
+import com.work.company.domain.dto.CsvCorResponseDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Entity
 @Table(name = "company")
@@ -28,10 +27,7 @@ public class CompanyEntity {
     // 행정구역코드
     private String admCd;
 
-    public static CompanyEntity toEntity(CsvCorResponseDto dto,
-                                   String crno,
-                                   String admCd) {
-
+    public static CompanyEntity toEntity(CsvCorResponseDto dto, String admCd, String crno) {
         CompanyEntity entity = new CompanyEntity();
         entity.prmmiMnno = dto.getPrmmiMnno();
         entity.bzmnNm = dto.getBzmnNm();

@@ -45,7 +45,6 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.awaitility:awaitility'
 
-    // ★ 반드시 5.x 로 통일
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 
     testImplementation 'io.projectreactor:reactor-test'
