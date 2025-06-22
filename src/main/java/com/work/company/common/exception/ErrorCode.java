@@ -19,7 +19,8 @@ public enum ErrorCode {
     COR_API_NO_RESPONSE("exception.error.corApi", HttpStatus.BAD_GATEWAY),
     ADR_API_NO_RESULT("exception.error.adrApi", HttpStatus.NOT_FOUND),
     ADDRESS_NOT_FOUND("exception.error.address.notFound", HttpStatus.UNPROCESSABLE_ENTITY),
-    ADMCD_NOT_FOUND("exception.error.admCd.notFound", HttpStatus.UNPROCESSABLE_ENTITY);
+    ADMCD_NOT_FOUND("exception.error.admCd.notFound", HttpStatus.UNPROCESSABLE_ENTITY),
+    INVALID_INPUT("exception.error.invalidInput", HttpStatus.UNPROCESSABLE_ENTITY);
 
     private final String message;
     private final HttpStatus status;

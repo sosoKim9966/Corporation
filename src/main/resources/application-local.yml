@@ -25,7 +25,7 @@ corporation:
   cor:
     api:
       url: https://apis.data.go.kr/1130000/MllBsDtl_2Service/getMllBsInfoDetail_2
-      key: rwe7KLx3it1dFXPVmKAVQpY5j9SK0bNTf6s0mB2q41WoAUJRUe%2BmWS0UzPh4kDZhnoFg3k52YVApFOFbuS80iQ%3D%3D
+      key: tKgE3idpyMUHBymQyMbL1NR6x1HBcmdHH0rMuxe7FAiyKr1R98VXZiRrcHpAfMYmuHRK/wwoQ/6seZWe7Da4LA==
 
   adr:
     api:

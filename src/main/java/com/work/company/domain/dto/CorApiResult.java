@@ -5,5 +5,5 @@ import com.fasterxml.jackson.databind.JsonNode;
 public record CorApiResult(
         CsvCorResponseDto dto,
         JsonNode corItem,
-        String rnAddr
+        String lctnRnAddr
 ) {}

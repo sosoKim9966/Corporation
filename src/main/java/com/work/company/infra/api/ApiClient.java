@@ -40,9 +40,10 @@ public class ApiClient {
         if (brno == null || brno.isBlank()) {
             throw new CustomException(ErrorCode.INVALID_ARGUMENT, "brno 비었음");
         }
+        String encodedKey = URLEncoder.encode(corKey, StandardCharsets.UTF_8);
 
         URI uri = UriComponentsBuilder.fromHttpUrl(corUrl)
-                .queryParam("serviceKey", corKey)
+                .queryParam("serviceKey", encodedKey)
                 .queryParam("pageNo", 1)
                 .queryParam("numOfRows",1)
                 .queryParam("resultType","json")

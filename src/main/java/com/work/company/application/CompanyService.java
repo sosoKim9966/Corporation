@@ -30,6 +30,10 @@ import java.util.concurrent.Executor;
 @Service
 @RequiredArgsConstructor
 public class CompanyService {
+    private static final Map<String, String> ROAD_NAME_MAP = Map.of(
+            "인촌로", "고려대로"
+    );
+
     private final CompanyRepository companyRepository;
     private final CsvDownloader downloader;
     private final CsvCorParser parser;
@@ -40,25 +44,30 @@ public class CompanyService {
 
     @Transactional
     public CsvProcessingResult processCsvAndSaveCompanies(String city, String district) throws Exception {
-        // csv 파일 다운로드
         Path path = downloader.download(city, district);
-
-        List<CsvCorResponseDto> list = parser.getCorList(path);
-
-        return fetchAndSaveCompanyDetailsAsync(list);
+        List<CsvCorResponseDto> dtoList = parser.getCorList(path);
+        return fetchAndSaveCompanyDetailsAsync(dtoList);
     }
 
-    public static final Map<String, String> ROAD_NAME_MAP = Map.ofEntries(
-            Map.entry("인촌로", "고려대로")
-    );
+    public CsvProcessingResult fetchAndSaveCompanyDetailsAsync(List<CsvCorResponseDto> list) {
+        List<CompletableFuture<Optional<CompanyEntity>>> futures = list.stream()
+                .map(this::fetchCompanyDetailAsync)
+                .toList();
 
-    public static String changeAdrMap(String lctnRnAddr) {
-        for (var e : ROAD_NAME_MAP.entrySet()){
-            if(lctnRnAddr.contains(e.getKey())){
-                return lctnRnAddr.replace(e.getKey(), e.getValue());
-            }
+        List<Optional<CompanyEntity>> optionalResults = CompletableFuture
+                .allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futures.stream().map(CompletableFuture::join).toList())
+                .join();
+
+        List<CompanyEntity> entities = optionalResults.stream()
+                .flatMap(Optional::stream)
+                .toList();
+
+        if (!entities.isEmpty()) {
+            companyRepository.saveAll(entities);
         }
-        return lctnRnAddr;
+
+        return new CsvProcessingResult(list.size(), entities.size(), list.size() - entities.size());
     }
 
     public CompletableFuture<Optional<CompanyEntity>> fetchCompanyDetailAsync(CsvCorResponseDto dto) {
@@ -72,11 +81,19 @@ public class CompanyService {
                 });
     }
 
+    public static String changeAdrMap(String address) {
+        for (var entry : ROAD_NAME_MAP.entrySet()) {
+            if (address.contains(entry.getKey())) {
+                return address.replace(entry.getKey(), entry.getValue());
+            }
+        }
+        return address;
+    }
+
     private CompletableFuture<CsvCorResponseDto> validate(CsvCorResponseDto dto) {
         if (dto == null || !StringUtils.hasText(dto.getBrno())) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid input DTO"));
+            return CompletableFuture.failedFuture(new CustomException(ErrorCode.INVALID_INPUT, "입력값 누락 또는 형식 오류"));
         }
-
         return CompletableFuture.completedFuture(dto);
     }
 
@@ -89,18 +106,29 @@ public class CompanyService {
                     }
 
                     JsonNode corItem = items.get(0);
-                    String rnAddr = changeAdrMap(corItem.path("lctnRnAddr").asText());
+                    String lctnRnAddr = extractValidAddress(corItem, dto.getBrno());
 
-                    if (!StringUtils.hasText(rnAddr) || "N/A".equalsIgnoreCase(rnAddr)) {
-                        throw new CustomException(ErrorCode.ADDRESS_NOT_FOUND, "주소 없음");
-                    }
-
-                    return new CorApiResult(dto, corItem, rnAddr);
+                    return new CorApiResult(dto, corItem, lctnRnAddr);
                 });
     }
 
+    private String extractValidAddress(JsonNode corItem, String brno) {
+        String addr = changeAdrMap(corItem.path("lctnRnAddr").asText());
+
+        if (!StringUtils.hasText(addr) || "N/A".equalsIgnoreCase(addr)) {
+            log.warn("lctnRnAddr 없음, lctnAddr 재시도: brno={}", brno);
+            addr = changeAdrMap(corItem.path("lctnAddr").asText());
+        }
+
+        if (!StringUtils.hasText(addr) || "N/A".equalsIgnoreCase(addr)) {
+            throw new CustomException(ErrorCode.ADDRESS_NOT_FOUND, "법인 API 주소값 없음");
+        }
+
+        return addr;
+    }
+
     private CompletableFuture<AdrApiResult> callAddressApi(CorApiResult input) {
-        return CompletableFuture.supplyAsync(() -> client.callAdrApi(input.rnAddr()), corporationExecutor)
+        return CompletableFuture.supplyAsync(() -> client.callAdrApi(input.lctnRnAddr()), corporationExecutor)
                 .thenApply(adr -> {
                     JsonNode juso = adr.path("results").path("juso");
                     if (!juso.isArray() || juso.isEmpty()) {
@@ -116,40 +144,11 @@ public class CompanyService {
                 });
     }
 
-    public CsvProcessingResult fetchAndSaveCompanyDetailsAsync(List<CsvCorResponseDto> list) {
-        List<CompletableFuture<Optional<CompanyEntity>>> futures = list.stream()
-                .map(this::fetchCompanyDetailAsync)
-                .toList();
-
-        List<Optional<CompanyEntity>> optionalResults = CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> futures.stream()
-                        .map(CompletableFuture::join)
-                        .toList())
-                .join();
-
-        List<CompanyEntity> entities = optionalResults.stream()
-                .flatMap(Optional::stream)
-                .toList();
-
-        if (!entities.isEmpty()) {
-            companyRepository.saveAll(entities);
-        }
-
-        return new CsvProcessingResult(
-                list.size(),
-                entities.size(),
-                list.size() - entities.size()
-        );
-    }
-
     private Optional<CompanyEntity> toCompanyEntity(AdrApiResult input) {
-        CompanyEntity entity = CompanyEntity.toEntity(
+        return Optional.ofNullable(CompanyEntity.toEntity(
                 input.dto(),
                 input.admCd(),
                 input.corItem().path("crno").asText()
-        );
-
-        return Optional.ofNullable(entity);
+        ));
     }
 }
