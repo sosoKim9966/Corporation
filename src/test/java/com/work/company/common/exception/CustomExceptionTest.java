@@ -1,4 +1,4 @@
-package com.work.company.exception;
+package com.work.company.common.exception;
 import com.work.company.common.exception.CustomException;
 import com.work.company.common.exception.ErrorCode;
 import org.junit.jupiter.api.Test;

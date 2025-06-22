@@ -1,4 +1,4 @@
-package com.work.company.log;
+package com.work.company.common.log;
 
 import com.work.company.common.exception.CustomException;
 import com.work.company.common.log.LogAspect;

@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @SpringBootTest
-public class downloaderTest {
+public class CsvDownloaderTest {
 
     @Autowired
     private CsvDownloader downloader;
